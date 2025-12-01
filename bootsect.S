@@ -1,33 +1,77 @@
-BOOTSEG = 0x7c0
-.code16 
+SETUPLEN  = 4
+
+BOOTSEG   = 0x7c0
+
+INITSEG   = 0x9000
+
+SETUPSEG  = 0x9020
+
+SYSSEG    = 0x1000
+
+ENDSEG    = SYSSEG + SYSSIZE
+
+ROOT_DEV  = 0x000
+
+.code16
 .text
-.global _start          #设置全局代码入口
 
-_start:                 #代码入口
-    jmpl $BOOTSEG, $start2  
+.global _start
+_start:
 
-start2 :                #设置相关寄存器，准备调用中断
-    movw $BOOTSEG, %ax 
-    movw %ax, %ds
-    movw %ax, %es
-    movw %ax, %fs
-    movw %ax, %gs
+  jmpl $BOOTSEG, $start2
 
-    movw $msg, %ax
-    movw %ax, %bp
-    movw $0x01301, %ax
-    movw $0x0c, %bx # bh = 0，bl = 0c(红色)
-    movw $12, %cx # cx = 串长度
-    movb $0, %dl
-    int $0x010 # 10h号中断,通知显卡刷新内容
+start2:
+  movw $BOOTSEG, %ax
+  movw %ax, %ds
+  movw $INITSEG, %ax
+  movw %ax, %es
+  movw $256, %cx
+  subw %si, %si
+  subw %di, %di
 
-loop:           #中断结束，死循环，防止CPU出现不可控情况
-    jmp loop
+  rep
+  movsw
+
+  jmpl $INITSEG, $go
+
+go:
+  movw %cs, %ax
+  movw %ax, %ds
+  movw %ax, %es
+  movw %ax, %ss
+  movw $0xFF00, %sp
+
+load_setup:
+  movw $0x0000, %dx
+  movw $0x0002, %cx
+  movw $0x0200, %bx
+  movb $SETUPLEN, %al
+  movb $0x02,   %ah
+  int  $0x13
+  jnc  ok_load_setup
+  movw $0x0000, %dx
+  movw $0x0000, %ax
+  int  $0x13
+  jmp  load_setup
+
+ok_load_setup:
+
+  movw $msg, %ax
+  movw %ax, %bp
+  movw $0x01301, %ax
+  movw $0x0c, %bx
+  movw $21, %cx
+  movb $0, %dl
+  int  $0x010
+
+  jmpl $SETUPSEG, $0
 
 msg:
-.ascii "Hello World!"
+.ascii "Setup has been loaded"
 
-.org 510
+.org 508
+root_dev:
+  .word ROOT_DEV
 boot_flag:
-    .word 0xaa55
+  .word 0xaa55
 
