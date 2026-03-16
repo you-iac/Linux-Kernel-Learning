@@ -1,3 +1,12 @@
 *.o
+*.img
+
+# 忽略 Linux 0.12 编译生成的特定二进制文件
+system
 bootsect
 setup
+Image
+
+# 忽略所有的静态库和动态库
+*.a
+*.so

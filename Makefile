@@ -26,6 +26,9 @@ setup : setup.o
 setup.o : setup.S
 	$(AS) -o $@ $<
 
+chr_drv/chr_drv.a: chr_drv/*.c
+	cd chr_drv; make chr_drv.a; cd ..
+
 clean:
 	rm -f *.o
 	rm -f bootsect
@@ -33,5 +36,4 @@ clean:
 	rm -f tools/build
 	rm -f linux.img
 	cd kernel; make clean; cd ..
-
 
