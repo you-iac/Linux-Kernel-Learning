@@ -5,15 +5,13 @@ LDFLAG := -Ttext 0x0 -s --oformat binary
 
 image : linux.img
 
-image : linux.img
-
 linux.img : tools/build bootsect setup kernel/system
 	./tools/build bootsect setup kernel/system > $@
 
 tools/build : tools/build.c
 	gcc -o $@ $<
 
-kernel/system :
+kernel/system : kernel/head.S kernel/*.c
 	cd kernel; make system; cd ..
 
 bootsect : bootsect.o
@@ -23,10 +21,11 @@ bootsect.o : bootsect.S
 	$(AS) -o $@ $<
 
 setup : setup.o
-		$(LD) $(LDFLAG) -e _start_setup -o $@ $<
+	$(LD) $(LDFLAG) -e _start_setup -o $@ $<
 
 setup.o : setup.S
-		$(AS) -o $@ $<
+	$(AS) -o $@ $<
+
 clean:
 	rm -f *.o
 	rm -f bootsect
