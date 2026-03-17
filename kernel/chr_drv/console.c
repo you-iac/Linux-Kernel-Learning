@@ -116,9 +116,9 @@ void console_print(const char* buf, int nr) {
     int i = 0;
     
     for (i = 0; i < nr; i++) {
-        if(*s == '/'){      //判断特殊反斜杠字符
+        if(*s == '\n'){      //判断特殊反斜杠字符
             i++,s++;
-            if(*s == 'n'){x = 0,y++;gotoxy(x, y);continue;}     //如果是回车
+            x = 0,y++;gotoxy(x, y);continue;     //如果是回车
         }
 
         *t++ = *(s++);  //输出字符到显存空间
