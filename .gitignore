@@ -6,7 +6,9 @@ system
 bootsect
 setup
 Image
+build
 
 # 忽略所有的静态库和动态库
 *.a
 *.so
+.gitignore
