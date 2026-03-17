@@ -5,13 +5,13 @@ CCFLAG := -m32 -I../include -nostdinc -ffreestanding -fno-pic -Wall -fomit-frame
 OBJS   := string.o
 
 lib.a : $(OBJS)
-		$(AR) rcs $@ $^
-		sync
+	$(AR) rcs $@ $^
+	sync
 
 string.o : string.c
-		$(GCC) $(CCFLAG) -o $@ $<
+	$(GCC) $(CCFLAG) -o $@ $<
 
 clean : 
-		-rm *.o
-		-rm lib.a
+	rm -f *.o
+	rm -f lib.a
 

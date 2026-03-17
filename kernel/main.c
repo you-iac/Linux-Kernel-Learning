@@ -2,6 +2,7 @@
 
 #include <linux/tty.h>      /* 终端设备相关头文件 */
 #include <linux/kernel.h>   /* 内核通用函数 */
+#include <linux/sched.h>
 
 extern void mem_init(long start, long end); /* 内存初始化函数声明，在mm/memory.c中定义 */
 
@@ -25,12 +26,14 @@ void main(void) {
 
     main_memory_start = buffer_memory_end;      /* 主内存起始地址即为缓冲区的结束地址，主内存区域将用于动态分配（如用户进程） */
     mem_init(main_memory_start, memory_end);    /* 初始化内存管理，设置主内存区域的起始和结束地址 */
+    sched_init();
 
     tty_init();
     
-    printk("memory start: %d, end: %d", main_memory_start, memory_end);
+    printk("memory start: %d, end: %d\n\r", main_memory_start, memory_end);
 
     __asm__ __volatile__(
+            "int $0x7f\n\r"
             "int $0x80\n\r"
             "loop:\n\r"
             "jmp loop"

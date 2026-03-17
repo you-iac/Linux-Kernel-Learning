@@ -12,4 +12,4 @@ memory.o : memory.c
 	$(GCC) $(CCFLAG) -o $@ $<
 
 clean :
-	-rm *.o
+	rm -f *.o
