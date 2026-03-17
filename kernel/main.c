@@ -1,13 +1,15 @@
 #define __LIBRARY__
 
 #include <linux/tty.h>
-/// @brief 死循环陷阱
-/// @param  
-void main(void) 
-{
+#include <linux/kernel.h>
+
+void main(void) {
     tty_init();
-    __asm__("int $0x80 \n\r"::);
+    char* s = "world";
+    
+    printk("hello %s!/n", s);
     __asm__ __volatile__(
+            "int $0x80\n\r"
             "loop:\n\r"
             "jmp loop"
             ::);

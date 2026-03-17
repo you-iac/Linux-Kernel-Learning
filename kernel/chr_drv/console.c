@@ -34,8 +34,6 @@ static unsigned long    x, y;        // 当前光标坐标（列、行）
 static unsigned long    top, bottom; // 滚动区域边界（未使用）
 static unsigned long    attr = 0x07; // 默认字符属性（黑底白字）
 
-static char buf[8];     // 未使用的缓冲区
-
 /// @brief 设置逻辑光标坐标，并计算对应的显存地址。  @param new_x X  @param new_y Y
 static inline void gotoxy(int new_x,unsigned int new_y) {
     if (new_x > video_num_columns || new_y >= video_num_lines)
@@ -100,7 +98,7 @@ void con_init() {
     display_ptr = ((char *)video_mem_base) + video_size_row - 8;
     while (*display_desc) {
         *display_ptr++ = *display_desc++;   /* 写入字符 */
-        *display_ptr++;                      /* 跳过属性字节 */
+        display_ptr++;                      /* 跳过属性字节 */
     }
 
     origin = video_mem_base;
@@ -110,21 +108,26 @@ void con_init() {
 
     gotoxy(ORIG_X, ORIG_Y);
     set_cursor();x=0,y+=2;gotoxy(x,y);
-    console_print("hello world!", 12);
 }
 /// @brief 在当前光标位置输出指定长度的字符串  @param buf 缓冲区 @param nr 字节数
 void console_print(const char* buf, int nr) {
     char* t = (char*)pos;
-    char* s = buf;
+    const char* s = buf;
     int i = 0;
     
     for (i = 0; i < nr; i++) {
-        *t++ = *(s++);
-        *t++ = 0xf;
+        if(*s == '/'){      //判断特殊反斜杠字符
+            i++,s++;
+            if(*s == 'n'){x = 0,y++;gotoxy(x, y);continue;}     //如果是回车
+        }
+
+        *t++ = *(s++);  //输出字符到显存空间
+        *t++ = 0xf;     
         x++;
+
     }
 
-    pos = t;
+    pos = (long)t;
     gotoxy(x, y);
     set_cursor();
 }

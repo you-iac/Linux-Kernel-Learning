@@ -1,6 +1,6 @@
 #ifndef _IO_H
 #define _IO_H
-
+/*定义端口输入输出函数*/
 #define outb_p(value, port)     \
 __asm__("outb %%al, %%dx\n"     \
         "\tjmp 1f\n"            \
