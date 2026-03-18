@@ -1,5 +1,8 @@
 *.o
 *.img
+*.exe
+*.map
+
 
 # 忽略 Linux 0.12 编译生成的特定二进制文件
 system

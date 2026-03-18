@@ -1,7 +1,7 @@
 .code32             /* 使用32位模式 */
 .text               /* 代码段 */
 .globl startup_32, idt, gdt, pg_dir, tmp_floppy_area  /* 导出全局符号 */
-pg_dir:             /* 页目录起始位置 */
+pg_dir:             /* 页目录起始位置 相对位置为0*/
 startup_32:         /* 32位启动入口 */
     movl $0x10, %eax    /* 初始化段寄存器为内核数据段选择子 (0x10) */
     movw %ax,   %ds
@@ -64,7 +64,7 @@ pg2:                 /* 页表 2 起始位置 */
 .org 0x4000
 pg3:                 /* 页表 3 起始位置 */
 
-.org 0x5000
+.org 0x5000          /*后续代码执行位置*/
 
 tmp_floppy_area:     /* 软盘临时缓冲区（1024字节，初始化为0） */
 .fill 1024, 1, 0
