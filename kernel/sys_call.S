@@ -2,7 +2,7 @@
 .text
 .globl system_call
 int_msg:
-    .asciz  "In kernel interrupt"
+    .asciz  "In kernel interrupt\n"
 
 system_call:
     /* we do not have function _printk now, so trick it */

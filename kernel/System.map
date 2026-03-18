@@ -1,0 +1,501 @@
+Archive member included to satisfy reference by file (symbol)
+
+chr_drv/chr_drv.a(tty_io.o)   main.o (tty_init)
+chr_drv/chr_drv.a(console.o)  chr_drv/chr_drv.a(tty_io.o) (con_init)
+../lib/lib.a(string.o)        vsprintf.o (strlen)
+
+Discarded input sections
+
+ .note.GNU-stack
+                0x00000000        0x0 main.o
+ .note.GNU-stack
+                0x00000000        0x0 sched.o
+ .note.GNU-stack
+                0x00000000        0x0 printk.o
+ .note.GNU-stack
+                0x00000000        0x0 vsprintf.o
+ .note.GNU-stack
+                0x00000000        0x0 traps.o
+ .note.GNU-stack
+                0x00000000        0x0 chr_drv/chr_drv.a(tty_io.o)
+ .note.GNU-stack
+                0x00000000        0x0 chr_drv/chr_drv.a(console.o)
+ .note.GNU-stack
+                0x00000000        0x0 mm/mm.o
+ .note.GNU-stack
+                0x00000000        0x0 ../lib/lib.a(string.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+Address of section .text set to 0x0
+LOAD head.o
+LOAD main.o
+LOAD sched.o
+LOAD printk.o
+LOAD sys_call.o
+LOAD vsprintf.o
+LOAD traps.o
+LOAD asm.o
+LOAD chr_drv/chr_drv.a
+LOAD mm/mm.o
+LOAD ../lib/lib.a
+                [!provide]                        PROVIDE (__executable_start = SEGMENT_START ("text-segment", 0x8048000))
+                0x08048000                        . = (SEGMENT_START ("text-segment", 0x8048000) + SIZEOF_HEADERS)
+
+.interp
+ *(.interp)
+
+.note.gnu.build-id
+ *(.note.gnu.build-id)
+
+.hash
+ *(.hash)
+
+.gnu.hash
+ *(.gnu.hash)
+
+.dynsym
+ *(.dynsym)
+
+.dynstr
+ *(.dynstr)
+
+.gnu.version
+ *(.gnu.version)
+
+.gnu.version_d
+ *(.gnu.version_d)
+
+.gnu.version_r
+ *(.gnu.version_r)
+
+.rel.dyn
+ *(.rel.init)
+ *(.rel.text .rel.text.* .rel.gnu.linkonce.t.*)
+ *(.rel.fini)
+ *(.rel.rodata .rel.rodata.* .rel.gnu.linkonce.r.*)
+ *(.rel.data.rel.ro .rel.data.rel.ro.* .rel.gnu.linkonce.d.rel.ro.*)
+ *(.rel.data .rel.data.* .rel.gnu.linkonce.d.*)
+ *(.rel.tdata .rel.tdata.* .rel.gnu.linkonce.td.*)
+ *(.rel.tbss .rel.tbss.* .rel.gnu.linkonce.tb.*)
+ *(.rel.ctors)
+ *(.rel.dtors)
+ *(.rel.got)
+ *(.rel.bss .rel.bss.* .rel.gnu.linkonce.b.*)
+ *(.rel.ifunc)
+
+.rel.plt        0x08048000        0x0
+ *(.rel.plt)
+                [!provide]                        PROVIDE (__rel_iplt_start = .)
+ *(.rel.iplt)
+                [!provide]                        PROVIDE (__rel_iplt_end = .)
+
+.relr.dyn
+ *(.relr.dyn)
+                0x08048000                        . = ALIGN (CONSTANT (MAXPAGESIZE))
+
+.init
+ *(SORT_NONE(.init))
+
+.plt
+ *(.plt)
+ *(.iplt)
+
+.plt.got
+ *(.plt.got)
+
+.plt.sec
+ *(.plt.sec)
+
+.text           0x00000000     0x7e59
+ *(.text.unlikely .text.*_unlikely .text.unlikely.*)
+ *(.text.exit .text.exit.*)
+ *(.text.startup .text.startup.*)
+ *(.text.hot .text.hot.*)
+ *(SORT_BY_NAME(.text.sorted.*))
+ *(.text .stub .text.* .gnu.linkonce.t.*)
+ .text          0x00000000     0x64b0 head.o
+                0x00000000                startup_32
+                0x00000000                pg_dir
+                0x00005000                tmp_floppy_area
+                0x000054b0                idt
+                0x00005cb0                gdt
+ .text          0x000064b0       0xf6 main.o
+                0x000064b0                main
+ .text          0x000065a6       0x23 sched.o
+                0x000065a6                sched_init
+ .text          0x000065c9       0x52 printk.o
+                0x000065c9                printk
+ .text          0x0000661b       0x40 sys_call.o
+                0x00006630                system_call
+ .text          0x0000665b      0x73f vsprintf.o
+                0x00006932                vsprintf
+ .text          0x00006d9a      0x50f traps.o
+                0x00006dc4                do_double_fault
+                0x00006de4                do_general_protection
+                0x00006e04                do_alignment_check
+                0x00006e24                do_divide_error
+                0x00006e44                do_int3
+                0x00006edd                do_nmi
+                0x00006efd                do_debug
+                0x00006f1d                do_overflow
+                0x00006f3d                do_bounds
+                0x00006f5d                do_invalid_op
+                0x00006f7d                do_device_not_available
+                0x00006f9d                do_coprocessor_segment_overrun
+                0x00006fbd                do_segment_not_present
+                0x00006fdd                do_invalid_TSS
+                0x00006ffd                do_stack_segment
+                0x0000701d                do_reserved
+                0x0000703d                trap_init
+ .text          0x000072a9       0xc7 asm.o
+                0x000072a9                divide_error
+                0x000072de                debug
+                0x000072e5                nmi
+                0x000072ec                int3
+                0x000072f3                overflow
+                0x000072fa                bounds
+                0x00007301                invalid_op
+                0x00007308                coprocessor_segment_overrun
+                0x0000730f                reserved
+                0x00007316                double_fault
+                0x0000734d                invalid_TSS
+                0x00007354                segment_not_present
+                0x0000735b                stack_segment
+                0x00007362                general_protection
+                0x00007369                alignment_check
+ .text          0x00007370       0x28 chr_drv/chr_drv.a(tty_io.o)
+                0x00007370                tty_init
+                0x0000737d                tty_write
+ .text          0x00007398      0x65d chr_drv/chr_drv.a(console.o)
+                0x000076ba                con_init
+                0x000078b8                console_print
+ .text          0x000079f5       0x77 mm/mm.o
+                0x000079f5                mem_init
+ .text          0x00007a6c      0x3ed ../lib/lib.a(string.o)
+                0x00007a6c                strcpy
+                0x00007a88                strncpy
+                0x00007aaf                strcat
+                0x00007ada                strncat
+                0x00007b0f                strcmp
+                0x00007b36                strncmp
+                0x00007b64                strchr
+                0x00007b92                strrchr
+                0x00007bc2                strspn
+                0x00007bfd                strcspn
+                0x00007c38                strpbrk
+                0x00007c73                strstr
+                0x00007cac                strlen
+                0x00007cd5                memcpy
+                0x00007cf5                memmove
+                0x00007d49                memcmp
+                0x00007d73                memchr
+                0x00007dac                memset
+                0x00007dd1                strtok
+ *(.gnu.warning)
+
+.fini
+ *(SORT_NONE(.fini))
+                [!provide]                        PROVIDE (__etext = .)
+                [!provide]                        PROVIDE (_etext = .)
+                [!provide]                        PROVIDE (etext = .)
+                0x00008000                        . = ALIGN (CONSTANT (MAXPAGESIZE))
+                0x00008000                        . = SEGMENT_START ("rodata-segment", (ALIGN (CONSTANT (MAXPAGESIZE)) + (. & (CONSTANT (MAXPAGESIZE) - 0x1))))
+
+.rodata         0x00008000      0x2c9
+ *(.rodata .rodata.* .gnu.linkonce.r.*)
+ .rodata        0x00008000       0x1b main.o
+ *fill*         0x0000801b        0x1 
+ .rodata        0x0000801c      0x118 vsprintf.o
+ .rodata        0x00008134      0x17c traps.o
+ .rodata        0x000082b0       0x19 chr_drv/chr_drv.a(console.o)
+
+.rodata1
+ *(.rodata1)
+
+.eh_frame_hdr
+ *(.eh_frame_hdr)
+ *(.eh_frame_entry .eh_frame_entry.*)
+
+.eh_frame       0x000082cc      0x970
+ *(.eh_frame)
+ .eh_frame      0x000082cc       0x44 main.o
+ .eh_frame      0x00008310       0x34 sched.o
+ .eh_frame      0x00008344       0x48 printk.o
+ .eh_frame      0x0000838c       0xec vsprintf.o
+ .eh_frame      0x00008478      0x320 traps.o
+ .eh_frame      0x00008798       0x54 chr_drv/chr_drv.a(tty_io.o)
+ .eh_frame      0x000087ec      0x110 chr_drv/chr_drv.a(console.o)
+ .eh_frame      0x000088fc       0x30 mm/mm.o
+ .eh_frame      0x0000892c      0x310 ../lib/lib.a(string.o)
+ *(.eh_frame.*)
+
+.sframe
+ *(.sframe)
+ *(.sframe.*)
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.gnu_extab
+ *(.gnu_extab*)
+
+.exception_ranges
+ *(.exception_ranges*)
+                0x00009000                        . = DATA_SEGMENT_ALIGN (CONSTANT (MAXPAGESIZE), CONSTANT (COMMONPAGESIZE))
+
+.eh_frame
+ *(.eh_frame)
+ *(.eh_frame.*)
+
+.sframe
+ *(.sframe)
+ *(.sframe.*)
+
+.gnu_extab
+ *(.gnu_extab)
+
+.gcc_except_table
+ *(.gcc_except_table .gcc_except_table.*)
+
+.exception_ranges
+ *(.exception_ranges*)
+
+.tdata          0x00009000        0x0
+                [!provide]                        PROVIDE (__tdata_start = .)
+ *(.tdata .tdata.* .gnu.linkonce.td.*)
+
+.tbss
+ *(.tbss .tbss.* .gnu.linkonce.tb.*)
+ *(.tcommon)
+
+.preinit_array  0x00009000        0x0
+                [!provide]                        PROVIDE (__preinit_array_start = .)
+ *(.preinit_array)
+                [!provide]                        PROVIDE (__preinit_array_end = .)
+
+.init_array     0x00009000        0x0
+                [!provide]                        PROVIDE (__init_array_start = .)
+ *(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*))
+ *(.init_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .ctors)
+                [!provide]                        PROVIDE (__init_array_end = .)
+
+.fini_array     0x00009000        0x0
+                [!provide]                        PROVIDE (__fini_array_start = .)
+ *(SORT_BY_INIT_PRIORITY(.fini_array.*) SORT_BY_INIT_PRIORITY(.dtors.*))
+ *(.fini_array EXCLUDE_FILE(*crtend?.o *crtend.o *crtbegin?.o *crtbegin.o) .dtors)
+                [!provide]                        PROVIDE (__fini_array_end = .)
+
+.ctors
+ *crtbegin.o(.ctors)
+ *crtbegin?.o(.ctors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
+ *(SORT_BY_NAME(.ctors.*))
+ *(.ctors)
+
+.dtors
+ *crtbegin.o(.dtors)
+ *crtbegin?.o(.dtors)
+ *(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
+ *(SORT_BY_NAME(.dtors.*))
+ *(.dtors)
+
+.jcr
+ *(.jcr)
+
+.data.rel.ro
+ *(.data.rel.ro.local* .gnu.linkonce.d.rel.ro.local.*)
+ *(.data.rel.ro .data.rel.ro.* .gnu.linkonce.d.rel.ro.*)
+
+.dynamic
+ *(.dynamic)
+
+.got
+ *(.got)
+ *(.igot)
+                0x00009000                        . = DATA_SEGMENT_RELRO_END (., (SIZEOF (.got.plt) >= 0xc)?0xc:0x0)
+
+.got.plt
+ *(.got.plt)
+ *(.igot.plt)
+
+.data           0x00009000        0xc
+ *(.data .data.* .gnu.linkonce.d.*)
+ .data          0x00009000        0x0 head.o
+ .data          0x00009000        0x0 main.o
+ .data          0x00009000        0x8 sched.o
+                0x00009000                stack_start
+ .data          0x00009008        0x0 printk.o
+ .data          0x00009008        0x0 sys_call.o
+ .data          0x00009008        0x0 vsprintf.o
+ .data          0x00009008        0x0 traps.o
+ .data          0x00009008        0x0 asm.o
+ .data          0x00009008        0x0 chr_drv/chr_drv.a(tty_io.o)
+ .data          0x00009008        0x4 chr_drv/chr_drv.a(console.o)
+ .data          0x0000900c        0x0 mm/mm.o
+ .data          0x0000900c        0x0 ../lib/lib.a(string.o)
+
+.data1
+ *(.data1)
+                0x0000900c                        _edata = .
+                [!provide]                        PROVIDE (edata = .)
+                0x0000900c                        . = ALIGN (ALIGNOF (NEXT_SECTION))
+                0x00009020                        __bss_start = .
+
+.bss            0x00009020     0x2384
+ *(.dynbss)
+ *(.bss .bss.* .gnu.linkonce.b.*)
+ .bss           0x00009020        0x0 head.o
+ .bss           0x00009020        0xc main.o
+ *fill*         0x0000902c       0x14 
+ .bss           0x00009040     0x1000 sched.o
+                0x00009040                user_stack
+ .bss           0x0000a040      0x400 printk.o
+ .bss           0x0000a440        0x0 sys_call.o
+ .bss           0x0000a440        0x0 vsprintf.o
+ .bss           0x0000a440        0x0 traps.o
+ .bss           0x0000a440        0x0 asm.o
+ .bss           0x0000a440        0x0 chr_drv/chr_drv.a(tty_io.o)
+ .bss           0x0000a440       0x3c chr_drv/chr_drv.a(console.o)
+ *fill*         0x0000a47c        0x4 
+ .bss           0x0000a480      0xf20 mm/mm.o
+                0x0000a480                HIGH_MEMORY
+                0x0000a4a0                mem_map
+ .bss           0x0000b3a0        0x4 ../lib/lib.a(string.o)
+                0x0000b3a0                ___strtok
+ *(COMMON)
+                0x0000b3a4                        . = ALIGN ((. != 0x0)?0x4:0x1)
+                0x0000b3a4                        . = ALIGN (0x4)
+                0x0000b3a4                        . = SEGMENT_START ("ldata-segment", .)
+                0x0000b3a4                        . = ALIGN (0x4)
+                0x0000b3a4                        _end = .
+                [!provide]                        PROVIDE (end = .)
+                0x0000b3a4                        . = DATA_SEGMENT_END (.)
+
+.stab
+ *(.stab)
+
+.stabstr
+ *(.stabstr)
+
+.stab.excl
+ *(.stab.excl)
+
+.stab.exclstr
+ *(.stab.exclstr)
+
+.stab.index
+ *(.stab.index)
+
+.stab.indexstr
+ *(.stab.indexstr)
+
+.comment        0x00000000      0x19e
+ *(.comment)
+ .comment       0x00000000       0x2e main.o
+ .comment       0x0000002e       0x2e sched.o
+ .comment       0x0000005c       0x2e printk.o
+ .comment       0x0000008a       0x2e vsprintf.o
+ .comment       0x000000b8       0x2e traps.o
+ .comment       0x000000e6       0x2e chr_drv/chr_drv.a(tty_io.o)
+ .comment       0x00000114       0x2e chr_drv/chr_drv.a(console.o)
+ .comment       0x00000142       0x2e mm/mm.o
+ .comment       0x00000170       0x2e ../lib/lib.a(string.o)
+
+.gnu.build.attributes
+ *(.gnu.build.attributes .gnu.build.attributes.*)
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges
+ *(.debug_aranges)
+
+.debug_pubnames
+ *(.debug_pubnames)
+
+.debug_info
+ *(.debug_info .gnu.linkonce.wi.*)
+
+.debug_abbrev
+ *(.debug_abbrev)
+
+.debug_line
+ *(.debug_line .debug_line.* .debug_line_end)
+
+.debug_frame
+ *(.debug_frame)
+
+.debug_str
+ *(.debug_str)
+
+.debug_loc
+ *(.debug_loc)
+
+.debug_macinfo
+ *(.debug_macinfo)
+
+.debug_weaknames
+ *(.debug_weaknames)
+
+.debug_funcnames
+ *(.debug_funcnames)
+
+.debug_typenames
+ *(.debug_typenames)
+
+.debug_varnames
+ *(.debug_varnames)
+
+.debug_pubtypes
+ *(.debug_pubtypes)
+
+.debug_ranges
+ *(.debug_ranges)
+
+.debug_addr
+ *(.debug_addr)
+
+.debug_line_str
+ *(.debug_line_str)
+
+.debug_loclists
+ *(.debug_loclists)
+
+.debug_macro
+ *(.debug_macro)
+
+.debug_names
+ *(.debug_names)
+
+.debug_rnglists
+ *(.debug_rnglists)
+
+.debug_str_offsets
+ *(.debug_str_offsets)
+
+.debug_sup
+ *(.debug_sup)
+
+.gnu.attributes
+ *(.gnu.attributes)
+
+/DISCARD/
+ *(.note.GNU-stack)
+ *(.gnu_debuglink)
+ *(.gnu.lto_*)
+OUTPUT(system binary)

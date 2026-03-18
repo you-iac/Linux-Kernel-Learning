@@ -26,6 +26,8 @@ void main(void) {
 
     main_memory_start = buffer_memory_end;      /* 主内存起始地址即为缓冲区的结束地址，主内存区域将用于动态分配（如用户进程） */
     mem_init(main_memory_start, memory_end);    /* 初始化内存管理，设置主内存区域的起始和结束地址 */
+    
+    trap_init();
     sched_init();
 
     tty_init();
@@ -35,6 +37,10 @@ void main(void) {
     __asm__ __volatile__(
             "int $0x7f\n\r"
             "int $0x80\n\r"
+            "movw $0x1b, %%ax\n\r"
+            "movw %%ax, %%gs\n\r"
+            "movl $0, %%edi\n\r"
+            "movw $0x0f41, %%gs:(%%edi)\n\r"
             "loop:\n\r"
             "jmp loop"
             ::);
