@@ -30,7 +30,7 @@ void main(void) {
 
     tty_init();
     
-    printk("memory start: %d, end: %d\n\r", main_memory_start, memory_end);
+    printk("memory start: %d, end: %d\n", main_memory_start, memory_end);
 
     __asm__ __volatile__(
             "int $0x7f\n\r"
