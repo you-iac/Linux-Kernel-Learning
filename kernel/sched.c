@@ -1,4 +1,7 @@
-#include <linux/sched.h>
+#include <errno.h>          /* 包含错误码定义 */
+#include <string.h>         /* 包含 memcpy 等字符串操作函数 */
+#include <linux/kernel.h>   /* 包含 printk 等内核函数 */
+#include <linux/sched.h>    /* 进程调度相关，此处主要用于定义任务结构体和调度函数 */
 
 #include <asm/system.h>
 
@@ -12,6 +15,9 @@ union task_union {
 };
 // 静态分配大小为4K的初始PCB
 static union task_union init_task = {INIT_TASK, };
+
+struct task_struct * current = &(init_task.task);   // 定义一个指向当前任务的指针，初始指向init_task
+struct task_struct * task[NR_TASKS] = {&(init_task.task), };    // 定义一个任务指针数组，包含了所有任务的指针，初始时只有init_task
 // long类型的长度是4B    size = 4096 / 2 / 2
 long user_stack[PAGE_SIZE >> 2];
 
@@ -22,13 +28,83 @@ struct
 } stack_start = {&user_stack[PAGE_SIZE >> 2], 0x10};
 // 任务调度初始化函数，设置初始任务的TSS和LDT描述符，并将系统调用处理函数注册到IDT中
 void sched_init() {
+    int i = 0;
     struct desc_struct* p;
     set_tss_desc(gdt + FIRST_TSS_ENTRY, &(init_task.task.tss));// 设置初始任务的TSS描述符，指向init_task的TSS结构体
     set_ldt_desc(gdt + FIRST_LDT_ENTRY, &(init_task.task.ldt));// 设置初始任务的LDT描述符，指向init_task的LDT结构体
     
+    p = gdt + FIRST_TSS_ENTRY + 2;  // 获取初始任务的之后的TSS描述符和GDT
+
+    for(i = 1; i < NR_TASKS; i++) {
+        task[i] = 0;    // 初始化任务数组,设置为0，表示没有其他任务
+        p->a = p->b = 0;
+        p++;
+        p->a = p->b = 0;
+        p++;
+    }
+
+    create_second_process();
+
     __asm__("pushfl; andl $0xffffbfff, (%esp); popfl"); // 清除EFLAGS寄存器中的NT标志，允许任务切换
     ltr(0);    // 加载初始任务的TSS到TR寄存器，准备进行任务切换
     lldt(0);    // 加载初始任务的LDT到LDTR寄存器，准备进行内存段切换
     set_system_gate(0x80, &system_call);// 将系统调用处理函数注册到IDT的0x80号中断向量上，使用系统门（特权级3）
 }
+// 创建第二个任务，复制当前任务的TSS和LDT，并设置新的TSS描述符和LDT描述符，返回新任务的索引
+int create_second_process() {
+    struct task_struct *p;  // 定义一个指向新任务的指针
+    int i, nr;
 
+    nr = find_empty_process();  // 在任务数组中找到一个空闲的任务槽，返回其索引，
+    if (nr < 0)     
+        return -EAGAIN;
+
+    p = (struct task_struct*) get_free_page();      // 获取一个空闲页框的物理地址，作为新任务的内核栈和PCB所在的内存空间
+    memcpy(p, current, sizeof(struct task_struct)); // 将当前任务的TSS和LDT复制到新任务的TSS和LDT中，确保新任务继承当前任务的上下文信息
+
+    set_tss_desc(gdt+(nr<<1)+FIRST_TSS_ENTRY,&(p->tss));    // 设置新任务的TSS描述符，指向新任务的TSS结构体
+    set_ldt_desc(gdt+(nr<<1)+FIRST_LDT_ENTRY,&(p->ldt));    // 设置新任务的LDT描述符，指向新任务的LDT结构体
+
+    memcpy(&p->tss, &current->tss, sizeof(struct tss_struct));  // 将当前任务的TSS内容复制到新任务的TSS中，确保新任务继承当前任务的寄存器状态和其他相关信息
+    // 设置新任务的TSS中的寄存器状态，指令指针（EIP）指向测试函数test_b，LDT选择子指向新任务的LDT，栈段选择子和数据段选择子设置为0x10，代码段选择子设置为0x8，标志寄存器设置为0x602（启用中断和IO权限）
+    p->tss.eip = (long)test_b;
+    p->tss.ldt = _LDT(nr);
+    p->tss.ss0 = 0x10;
+    p->tss.esp0 = PAGE_SIZE + (long)p;
+    p->tss.ss  = 0x10;
+    p->tss.ds  = 0x10;
+    p->tss.es  = 0x10;
+    p->tss.cs  = 0x8;
+    p->tss.fs  = 0x10;
+    p->tss.esp = PAGE_SIZE + (long)p;
+    p->tss.eflags = 0x602;
+
+    task[nr] = p;
+    return nr;
+}
+
+void test_a(void) { 
+__asm__("movl $0, %edi\n\r"
+        "movl $0x17, %eax\n\t"
+        "movw %ax, %ds \n\t"
+        "movw %ax, %es \n\t"
+        "movw %ax, %fs \n\t"
+        "movw $0x18, %ax\n\t"
+        "movw %ax, %gs \n\t"
+        "movb $0x0c, %ah\n\r"
+        "movb $'A', %al\n\r"
+        "loopa:\n\r"
+        "movw %ax, %gs:(%edi)\n\r"
+        "jmp loopa");
+}
+
+void test_b(void) { 
+__asm__("movl $0, %edi\n\r"
+        "movw $0x18, %ax\n\t"
+        "movw %ax, %gs \n\t"
+        "movb $0x0f, %ah\n\r"
+        "movb $'B', %al\n\r"
+        "loopb:\n\r"
+        "movw %ax, %gs:(%edi)\n\r"
+        "jmp loopb");
+}

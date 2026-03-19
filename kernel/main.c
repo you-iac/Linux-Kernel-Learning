@@ -37,6 +37,7 @@ void main(void) {
     printk("memory start: %d, end: %d\n", main_memory_start, memory_end);
 
     move_to_user_mode();
+ 
 
     __asm__ __volatile__(
             "int $0x80\n\r"

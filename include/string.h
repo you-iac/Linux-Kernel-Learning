@@ -1,6 +1,6 @@
 #ifndef _STRING_H_
 #define _STRING_H_
-/*提供字符串操作函数*/
+
 #ifndef NULL
 #define NULL ((void *) 0)
 #endif

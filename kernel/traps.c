@@ -1,4 +1,5 @@
 #include <asm/system.h>  /* 包含 _set_gate, set_trap_gate 等宏定义 */
+#include <linux/kernel.h>/* 包含 printk 等内核函数 */
 #include <linux/sched.h> /* 进程调度相关，此处主要用于 printk 等内核函数 */
 #include <asm/io.h>      /* 包含 inb_p, outb_p 等端口 I/O 宏 */
 /* 以下是汇编语言实现的中断处理跳转入口（在 asm.s 中定义） */

@@ -1,11 +1,23 @@
 #ifndef _SCHED_H    // 任务调度相关的头文件
 #define _SCHED_H
 
+#define NR_TASKS 64  // 定义系统中最大任务数为64
+
+#define FIRST_TASK task[0]  // 定义第一个任务为任务指针数组中的第一个元素，即init_task
+#define LAST_TASK task[NR_TASKS-1]  // 定义最后一个任务为任务指针数组中的最后一个元素，即task[63]
+
 #include <linux/head.h>
 #include <linux/mm.h>
 
 void trap_init();   //初始化陷阱调度
 void sched_init();      //初始化任务调度
+
+void test_a();
+void test_b();
+int create_second_process();
+
+extern struct task_struct *task[NR_TASKS];  // 定义一个任务指针数组，包含了所有任务的指针，初始时只有init_task
+extern struct task_struct *current;     // 定义一个指向当前任务的指针
 // 任务状态段（TSS）结构体，包含了任务切换时需要保存的寄存器状态和其他相关信息
 struct tss_struct {
     long back_link;      // 后向链接，用于任务切换
