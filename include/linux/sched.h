@@ -3,8 +3,9 @@
 
 #include <linux/head.h>
 #include <linux/mm.h>
-//初始化任务调度
-void sched_init();
+
+void trap_init();   //初始化陷阱调度
+void sched_init();      //初始化任务调度
 // 任务状态段（TSS）结构体，包含了任务切换时需要保存的寄存器状态和其他相关信息
 struct tss_struct {
     long back_link;      // 后向链接，用于任务切换
@@ -40,9 +41,9 @@ struct task_struct {
 #define INIT_TASK \ 
 {                   \
     {               \
-        {0, 0},     \
-        {0x9f, 0xc0fa00},   \
-        {0x9f, 0xc0f200},   \
+        {0, 0},     /* LDT[0]: 空描述符 */ \
+        {0x9f, 0xc0fa00},   /* LDT[1]: 代码段描述符 (0x9f: 类型和权限, 0xc0fa00: 基地址和限长) */ \
+        {0x9f, 0xc0f200},   /* LDT[2]: 数据段描述符 (0x9f: 类型和权限, 0xc0f200: 基地址和限长) */ \
     },              \
     {0, PAGE_SIZE + (long)&init_task, 0x10, 0, 0, 0, 0, (long)&pg_dir, \
         0, 0, 0, 0, 0, 0, 0, 0, \

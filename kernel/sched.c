@@ -5,12 +5,12 @@
 #define PAGE_SIZE 4096  // 定义页面大小为4KB
 // 定义了一个初始任务（init_task），作为系统启动时的第一个任务
 extern int system_call();
-// 定义了一个任务联合体，包含了一个任务结构体和一个栈数组，用于初始化第一个任务（init_task）
+// 定义了一个任务联合体，PCB和内核栈共享同一内存空间，大小为一个页面（4KB）
 union task_union {
     struct task_struct task;    // 任务结构体，包含了任务的LDT、TSS以及其他相关信息
     char stack[PAGE_SIZE];      // 任务的内核栈，大小为一个页面（4KB），用于存储任务切换时的上下文信息
 };
-// 定义了一个初始任务（init_task），作为系统启动时的第一个任务
+// 静态分配大小为4K的初始PCB
 static union task_union init_task = {INIT_TASK, };
 // long类型的长度是4B    size = 4096 / 2 / 2
 long user_stack[PAGE_SIZE >> 2];

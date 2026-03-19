@@ -1,5 +1,20 @@
 #ifndef _SYSTEM_H /* 基础 CPU 控制宏 */
 #define _SYSTEM_H
+    ///使CPU从内核态转移到用户态
+#define move_to_user_mode() \
+    __asm__("movl %%esp, %%eax\n\t" /* 保存当前esp到eax，作为用户栈指针 */ \
+        "pushl $0x17\n\t"       /* 压入用户数据段选择子(0x17)到栈，作为ss */ \
+        "pushl %%eax\n\t"       /* 压入用户栈指针到栈，作为esp。 */ \
+        "pushfl\n\t"            /* 压入eflags */ \
+        "pushl $0x0f\n\t"       /* 压入用户代码段选择子(0x0f)到栈，作为cs */ \
+        "pushl $1f\n\t"         /* 压入跳转地址eip */ \
+        "iret\n\t"              /* 压入跳转地址1f到栈，作为eip */ \
+        "1:\tmovl $0x17, %%eax\n\t" /* 1: 设置eax为0x17 */ \
+        "movw %%ax, %%ds\n\t"   /* 设置ds为用户数据段 */ \
+        "movw %%ax, %%es\n\t"   /* 设置es为用户数据段 */ \
+        "movw %%ax, %%fs\n\t"   /* 设置fs为用户数据段 */ \
+        "movw %%ax, %%gs\n\t"   /* 设置gs为用户数据段 */ \
+        :::"ax")
 
 #define sti()   __asm__("sti"::)    //启用中断
 #define cli()   __asm__("cli"::)    //禁用中断
@@ -16,13 +31,13 @@ __asm__("movw %%dx, %%ax\n\t"   \
         "o"(*((char*)(gate_addr))),                         \
         "o"(*(4 + (char*)(gate_addr))),                     \
         "d"((char*)(addr)), "a" (0x00080000))
-/// 陷阱门：主要用于 CPU 内部产生的异常（如除零、溢出） @param n 中断向量号 @param addr 处理函数的地址
+/// 设置陷阱门：主要用于 CPU 内部产生的异常（如除零、溢出） @param n 中断向量号 @param addr 处理函数的地址
 #define set_trap_gate(n, addr) \
     _set_gate(&idt[n], 15, 0, addr)        
-//  中断门：主要用于外部硬件中断（如时钟、键盘） @param n 中断向量号 @param addr 处理函数的地址
+//  设置中断门：主要用于外部硬件中断（如时钟、键盘） @param n 中断向量号 @param addr 处理函数的地址
 #define set_intr_gate(n, addr) \
     _set_gate(&idt[n], 14, 0, addr)
-//@brief 系统门：主要用于系统调用等需要用户态访问的特殊功能 @param n 中断向量号 @param addr 处理函数的地址
+//  设置系统门：主要用于系统调用等需要用户态访问的特殊功能 @param n 中断向量号 @param addr 处理函数的地址
 #define set_system_gate(n, addr) \
     _set_gate(&idt[n], 15, 3, addr)  
 /// @brief 设置TSS或LDT描述符的宏函数，n是描述符表项地址，addr是TSS或LDT结构体的地址，type是描述符类型（0x89表示TSS，0x82表示LDT）

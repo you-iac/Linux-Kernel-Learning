@@ -1,5 +1,7 @@
 #define __LIBRARY__ /* 定义库标志，用于条件编译，通常表示正在构建内核库 */
 
+#include <asm/system.h>
+
 #include <linux/tty.h>      /* 终端设备相关头文件 */
 #include <linux/kernel.h>   /* 内核通用函数 */
 #include <linux/sched.h>
@@ -34,13 +36,14 @@ void main(void) {
     
     printk("memory start: %d, end: %d\n", main_memory_start, memory_end);
 
+    move_to_user_mode();
+
     __asm__ __volatile__(
-            "int $0x7f\n\r"
             "int $0x80\n\r"
-            "movw $0x18, %%ax\n\r"
+            "movw $0x1b, %%ax\n\r"
             "movw %%ax, %%gs\n\r"
             "movl $0, %%edi\n\r"
-            "movw $0x0c42, %%gs:(%%edi)\n\r"
+            "movw $0x0d43, %%gs:(%%edi)\n\r"
             "loop:\n\r"
             "jmp loop"
             ::);
