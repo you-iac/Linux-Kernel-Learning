@@ -1,6 +1,8 @@
 #ifndef _SCHED_H    // 任务调度相关的头文件
 #define _SCHED_H
 
+#define HZ 100  /* 定义系统时钟频率为100Hz，即每秒钟产生100次时钟中断 */
+
 #define NR_TASKS 64  // 定义系统中最大任务数为64
 
 #define FIRST_TASK task[0]  // 定义第一个任务为任务指针数组中的第一个元素，即init_task

@@ -4,10 +4,13 @@
 #include <linux/sched.h>    /* 进程调度相关，此处主要用于定义任务结构体和调度函数 */
 
 #include <asm/system.h>
+#include <asm/io.h> 
 
+#define LATCH (1193180/HZ)  /* 定义定时器的计数值，1193180是8253/8254定时器的输入频率，除以HZ得到每个时钟周期的计数值 */
 #define PAGE_SIZE 4096  // 定义页面大小为4KB
-// 定义了一个初始任务（init_task），作为系统启动时的第一个任务
-extern int system_call();
+
+extern void timer_interrupt();// 在汇编中定义了一个定时器中断处理函数，负责处理时钟中断，更新系统时间和进行任务调度
+extern int system_call();// 定义了一个初始任务（init_task），作为系统启动时的第一个任务
 // 定义了一个任务联合体，PCB和内核栈共享同一内存空间，大小为一个页面（4KB）
 union task_union {
     struct task_struct task;    // 任务结构体，包含了任务的LDT、TSS以及其他相关信息
@@ -26,8 +29,16 @@ struct
     long *a;    /*栈起始地址择子*/
     short b;    /*段选择子*/
 } stack_start = {&user_stack[PAGE_SIZE >> 2], 0x10};
-// 任务调度初始化函数，设置初始任务的TSS和LDT描述符，并将系统调用处理函数注册到IDT中
-void sched_init() {
+
+void do_timer(long cpl) {// 定时器中断处理函数，更新系统时间和进行任务调度
+    static unsigned char c = '0';
+    if (c > 127) {
+        c = '0';
+    }
+    printk("\b%c", c++);
+}
+
+void sched_init() {// 任务调度初始化函数，设置初始任务的TSS和LDT描述符，并将系统调用处理函数注册到IDT中
     int i = 0;
     struct desc_struct* p;
     set_tss_desc(gdt + FIRST_TSS_ENTRY, &(init_task.task.tss));// 设置初始任务的TSS描述符，指向init_task的TSS结构体
@@ -48,6 +59,14 @@ void sched_init() {
     __asm__("pushfl; andl $0xffffbfff, (%esp); popfl"); // 清除EFLAGS寄存器中的NT标志，允许任务切换
     ltr(0);    // 加载初始任务的TSS到TR寄存器，准备进行任务切换
     lldt(0);    // 加载初始任务的LDT到LDTR寄存器，准备进行内存段切换
+    
+    /* open the clock interruption! */
+    outb_p(0x36, 0x43);
+    outb_p(LATCH & 0xff, 0x40);
+    outb(LATCH >> 8, 0x40);
+    set_intr_gate(0x20, &timer_interrupt);
+    outb(inb_p(0x21) & ~0x01, 0x21);
+
     set_system_gate(0x80, &system_call);// 将系统调用处理函数注册到IDT的0x80号中断向量上，使用系统门（特权级3）
 }
 // 创建第二个任务，复制当前任务的TSS和LDT，并设置新的TSS描述符和LDT描述符，返回新任务的索引
@@ -89,7 +108,7 @@ __asm__("movl $0, %edi\n\r"
         "movw %ax, %ds \n\t"
         "movw %ax, %es \n\t"
         "movw %ax, %fs \n\t"
-        "movw $0x18, %ax\n\t"
+        "movw $0x1b, %ax\n\t"
         "movw %ax, %gs \n\t"
         "movb $0x0c, %ah\n\r"
         "movb $'A', %al\n\r"
