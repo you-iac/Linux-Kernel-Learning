@@ -167,7 +167,6 @@ end_move:
     movb $0xff, %al         /* 屏蔽所有 IRQ */
     outb %al, $0x21
     .word 0x00eb, 0x00eb
-    movb $0xff, %al
     outb %al, $0xA1
 
     /* 开启保护模式（设置 CR0 的 PE 位） */

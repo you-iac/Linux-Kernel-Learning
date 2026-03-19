@@ -77,5 +77,16 @@ struct task_struct {
 #define ltr(n) __asm__("ltr %%ax"::"a"(_TSS(n)))    // 加载任务n的TSS到TR寄存器
 #define lldt(n) __asm__("lldt %%ax"::"a"(_LDT(n)))  // 加载任务n的LDT到LDTR寄存器
 
+#define switch_to(n) {  /*实现任务切换*/ \
+    struct {long a,b;} __tmp; \
+    __asm__("cmpl %%ecx,current\n\t" \
+            "je 1f\n\t" \
+            "movw %%dx,%1\n\t" \
+            "xchgl %%ecx,current\n\t" \
+            "ljmp *%0\n\t" \
+            "1:" \
+            ::"m" (*&__tmp.a),"m" (*&__tmp.b), \
+            "d" (_TSS(n)),"c" ((long) task[n])); \
+}  
 #endif
 

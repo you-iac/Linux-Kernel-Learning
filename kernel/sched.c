@@ -1,16 +1,16 @@
 #include <errno.h>          /* 包含错误码定义 */
-#include <string.h>         /* 包含 memcpy 等字符串操作函数 */
-#include <linux/kernel.h>   /* 包含 printk 等内核函数 */
 #include <linux/sched.h>    /* 进程调度相关，此处主要用于定义任务结构体和调度函数 */
 
 #include <asm/system.h>
 #include <asm/io.h> 
 
+#define COUNTER 100     // 定义定时器的初始计数值，决定了定时器中断的频率，COUNTER越小，中断越频繁
+
 #define LATCH (1193180/HZ)  /* 定义定时器的计数值，1193180是8253/8254定时器的输入频率，除以HZ得到每个时钟周期的计数值 */
 #define PAGE_SIZE 4096  // 定义页面大小为4KB
 
+extern int system_call();
 extern void timer_interrupt();// 在汇编中定义了一个定时器中断处理函数，负责处理时钟中断，更新系统时间和进行任务调度
-extern int system_call();// 定义了一个初始任务（init_task），作为系统启动时的第一个任务
 // 定义了一个任务联合体，PCB和内核栈共享同一内存空间，大小为一个页面（4KB）
 union task_union {
     struct task_struct task;    // 任务结构体，包含了任务的LDT、TSS以及其他相关信息
@@ -30,17 +30,42 @@ struct
     short b;    /*段选择子*/
 } stack_start = {&user_stack[PAGE_SIZE >> 2], 0x10};
 
+
+int clock = COUNTER;    // 全局变量，初始值为COUNTER，用于计数定时器中断的次数，决定了任务切换的频率
+static int cnt = 0;     // 静态变量，初始值为0，用于记录定时器中断的次数，防止中断当前代码未执行后嵌套重入
+static int isFirst = 1; // 静态变量，初始值为1，判断是否为第一个任务
+
 void do_timer(long cpl) {// 定时器中断处理函数，更新系统时间和进行任务调度
-    static unsigned char c = '0';
-    if (c > 127) {
-        c = '0';
+    cnt++;
+
+    if (cnt > 2) {
+        printk("cnt is %d\n\r", cnt);
+        return;
     }
-    printk("\b%c", c++);
+
+    if (clock >0 && clock <= COUNTER) {
+        clock--;
+    }
+    else if (clock == 0) {
+        clock = COUNTER;
+        if (isFirst) {
+            isFirst = 0;
+            switch_to(1);
+        }
+        else {
+            isFirst = 1;
+            switch_to(0);
+        }
+    }
+    else {
+        clock = COUNTER;
+    }
+    cnt--;
 }
 
 void sched_init() {// 任务调度初始化函数，设置初始任务的TSS和LDT描述符，并将系统调用处理函数注册到IDT中
     int i = 0;
-    struct desc_struct* p;
+    struct desc_struct * p;
     set_tss_desc(gdt + FIRST_TSS_ENTRY, &(init_task.task.tss));// 设置初始任务的TSS描述符，指向init_task的TSS结构体
     set_ldt_desc(gdt + FIRST_LDT_ENTRY, &(init_task.task.ldt));// 设置初始任务的LDT描述符，指向init_task的LDT结构体
     
@@ -122,7 +147,7 @@ __asm__("movl $0, %edi\n\r"
         "movw $0x18, %ax\n\t"
         "movw %ax, %gs \n\t"
         "movb $0x0f, %ah\n\r"
-        "movb $'B', %al\n\r"
+        "movb $'C', %al\n\r"
         "loopb:\n\r"
         "movw %ax, %gs:(%edi)\n\r"
         "jmp loopb");
