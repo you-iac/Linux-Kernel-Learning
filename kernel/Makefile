@@ -3,7 +3,8 @@ USE_DEBUG :=
 CCFLAG := -I../include -nostdinc -ffreestanding -Wall -fomit-frame-pointer -fno-pic -fno-stack-protector -c -m32 $(USE_DEBUG)
 LDFLAG := -Ttext 0x0 -s --oformat binary -m elf_i386
 INCDIR := ../include
-OBJS   := head.o main.o sched.o printk.o sys_call.o vsprintf.o traps.o asm.o chr_drv/chr_drv.a mm/mm.o ../lib/lib.a 
+OBJS   := head.o main.o sched.o printk.o sys_call.o vsprintf.o traps.o asm.o \
+	chr_drv/chr_drv.a ../mm/mm.o ../lib/lib.a 
 
 system: $(OBJS)
 	$(LD) $(LDFLAG) -e startup_32 -o $@ $^ -M > System.map
@@ -35,8 +36,8 @@ traps.o : traps.c
 chr_drv/chr_drv.a: chr_drv/*.c
 	cd chr_drv; make chr_drv.a; cd ..
 
-mm/mm.o : mm/*.c
-	cd mm; make mm.o; cd ..
+../mm/mm.o : ../mm/*.c
+	cd ../mm; make mm.o; cd ..
 
 ../lib/lib.a : ../lib/*.c
 	cd ../lib; make lib.a; cd ../kernel
@@ -47,4 +48,4 @@ clean :
 	rm -f System.map
 	cd chr_drv; make clean; cd ..
 	cd ../lib; make clean; cd ../kernel
-	cd mm; make clean; cd ..
+	cd ../mm; make clean; cd ../kernel
