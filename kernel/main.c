@@ -1,5 +1,11 @@
 #define __LIBRARY__ /* 定义库标志，用于条件编译，通常表示正在构建内核库 */
 
+#include <unistd.h>
+
+static inline _syscall0(int, fork);
+
+int errno;
+
 #include <asm/system.h>
 
 #include <linux/tty.h>      /* 终端设备相关头文件 */
@@ -37,8 +43,10 @@ void main(void) {
     printk("memory start: %d, end: %d\n", main_memory_start, memory_end);
 
     move_to_user_mode();
- 
-    while (1) {
+    if (fork() == 0) {
+        test_b();
+    }
+    else {
         test_a();
     }
 }

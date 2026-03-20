@@ -1,9 +1,15 @@
 #ifndef _MM_H
 #define _MM_H
 
+#include <linux/kernel.h>
+
 #define PAGE_SIZE 4096  // 定义页面大小为4KB
 
 extern unsigned long get_free_page();// 获取一个空闲页框的函数，返回页框的物理地址
+extern void free_page(unsigned long addr);
+
+#define invalidate() \
+__asm__("movl %%eax,%%cr3"::"a" (0))
 
 #define LOW_MEM 0x100000                    // 内核可用内存的起始地址，1MB
 extern unsigned long HIGH_MEMORY;           // 内核可用内存的最高地址

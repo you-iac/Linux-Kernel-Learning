@@ -4,6 +4,15 @@
 #define HZ 100  /* 定义系统时钟频率为100Hz，即每秒钟产生100次时钟中断 */
 
 #define NR_TASKS 64  // 定义系统中最大任务数为64
+#define TASK_SIZE       0x04000000
+
+#if (TASK_SIZE & 0x3fffff)
+#error "TASK_SIZE must be multiple of 4M"
+#endif
+
+#if (((TASK_SIZE>>16)*NR_TASKS) != 0x10000)
+#error "TASK_SIZE*NR_TASKS must be 4GB"
+#endif
 
 #define FIRST_TASK task[0]  // 定义第一个任务为任务指针数组中的第一个元素，即init_task
 #define LAST_TASK task[NR_TASKS-1]  // 定义最后一个任务为任务指针数组中的最后一个元素，即task[63]
@@ -11,15 +20,30 @@
 #include <linux/head.h>
 #include <linux/mm.h>
 
-void trap_init();   //初始化陷阱调度
-void sched_init();      //初始化任务调度
+#define TASK_RUNNING            0
+#define TASK_INTERRUPTIBLE      1
+#define TASK_UNINTERRUPTIBLE    2
+#define TASK_ZOMBIE             3
+#define TASK_STOPPED            4
 
+#ifndef NULL
+#define NULL ((void *) 0)
+#endif
+
+extern int copy_page_tables(unsigned long from, unsigned long to, long size);
+extern int free_page_tables(unsigned long from, unsigned long size);
+
+extern void trap_init();
+extern void sched_init();
+extern void schedule();
+extern void panic(const char* s);
 void test_a();
 void test_b();
-int create_second_process();
 
 extern struct task_struct *task[NR_TASKS];  // 定义一个任务指针数组，包含了所有任务的指针，初始时只有init_task
 extern struct task_struct *current;     // 定义一个指向当前任务的指针
+
+typedef int (*fn_ptr)();
 // 任务状态段（TSS）结构体，包含了任务切换时需要保存的寄存器状态和其他相关信息
 struct tss_struct {
     long back_link;      // 后向链接，用于任务切换
@@ -48,16 +72,22 @@ struct tss_struct {
 };
 /// 任务结构体，包含了任务的LDT、TSS以及其他相关信息
 struct task_struct {
+    long state;
+    long pid;
+    struct task_struct      *p_pptr;
     struct desc_struct ldt[3];
     struct tss_struct tss;
 };
 // 定义了一个可填充的初始任务结构体的数据体
 #define INIT_TASK \ 
 {                   \
+    0,              \
+    0,              \
+    &init_task.task,\
     {               \
         {0, 0},     /* LDT[0]: 空描述符 */ \
-        {0x9f, 0xc0fa00},   /* LDT[1]: 代码段描述符 (0x9f: 类型和权限, 0xc0fa00: 基地址和限长) */ \
-        {0x9f, 0xc0f200},   /* LDT[2]: 数据段描述符 (0x9f: 类型和权限, 0xc0f200: 基地址和限长) */ \
+        {0xfff, 0xc0fa00},   /* LDT[1]: 代码段描述符 (0x9f: 类型和权限, 0xc0fa00: 基地址和限长) */ \
+        {0xfff, 0xc0f200},   /* LDT[2]: 数据段描述符 (0x9f: 类型和权限, 0xc0f200: 基地址和限长) */ \
     },              \
     {0, PAGE_SIZE + (long)&init_task, 0x10, 0, 0, 0, 0, (long)&pg_dir, \
         0, 0, 0, 0, 0, 0, 0, 0, \
@@ -88,5 +118,51 @@ struct task_struct {
             ::"m" (*&__tmp.a),"m" (*&__tmp.b), \
             "d" (_TSS(n)),"c" ((long) task[n])); \
 }  
+
+#define _set_base(addr,base) \
+__asm__("movw %%dx,%0\n\t" \
+        "rorl $16,%%edx\n\t" \
+        "movb %%dl,%1\n\t" \
+        "movb %%dh,%2" \
+        ::"m" (*((addr)+2)), \
+        "m" (*((addr)+4)), \
+        "m" (*((addr)+7)), \
+        "d" (base) \
+        :)
+
+#define _set_limit(addr,limit) \
+__asm__("movw %%dx,%0\n\t" \
+        "rorl $16,%%edx\n\t" \
+        "movb %1,%%dh\n\t" \
+        "andb $0xf0,%%dh\n\t" \
+        "orb %%dh,%%dl\n\t" \
+        "movb %%dl,%1" \
+        ::"m" (*(addr)), \
+        "m" (*((addr)+6)), \
+        "d" (limit) \
+        :"dx")
+
+#define set_base(ldt,base) _set_base( ((char *)&(ldt)) , base )
+#define set_limit(ldt,limit) _set_limit( ((char *)&(ldt)) , (limit-1)>>12 )
+
+#define _get_base(addr) ({\
+unsigned long __base; \
+__asm__("movb %3,%%dh\n\t" \
+    "movb %2,%%dl\n\t" \
+    "shll $16,%%edx\n\t" \
+    "movw %1,%%dx" \
+    :"=d" (__base) \
+    :"m" (*((addr)+2)), \
+    "m" (*((addr)+4)), \
+    "m" (*((addr)+7))); \
+__base;})
+
+#define get_base(ldt) _get_base( ((char *)&(ldt)) )
+
+#define get_limit(segment) ({ \
+unsigned long __limit; \
+__asm__("lsll %1,%0\n\tincl %0":"=r" (__limit):"r" (segment)); \
+__limit;})
+
 #endif
 

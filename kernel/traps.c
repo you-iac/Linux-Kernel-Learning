@@ -2,6 +2,25 @@
 #include <linux/kernel.h>/* 包含 printk 等内核函数 */
 #include <linux/sched.h> /* 进程调度相关，此处主要用于 printk 等内核函数 */
 #include <asm/io.h>      /* 包含 inb_p, outb_p 等端口 I/O 宏 */
+
+#define get_seg_byte(seg,addr) ({ \
+register char __res; \
+__asm__("push %%fs;mov %%ax,%%fs;movb %%fs:%2,%%al;pop %%fs" \
+ :"=a" (__res):"0" (seg),"m" (*(addr))); \
+__res;})
+
+#define get_seg_long(seg,addr) ({ \
+register unsigned long __res; \
+__asm__("push %%fs;mov %%ax,%%fs;movl %%fs:%2,%%eax;pop %%fs" \
+    :"=a" (__res):"0" (seg),"m" (*(addr))); \
+__res;})
+
+
+#define _fs() ({ \
+register unsigned short __res; \
+__asm__("mov %%fs,%%ax":"=a" (__res):); \
+__res;})
+
 /* 以下是汇编语言实现的中断处理跳转入口（在 asm.s 中定义） */
 void divide_error();      // 0号：除零错误
 void debug();             // 1号：调试断点
@@ -15,15 +34,32 @@ void coprocessor_segment_overrun(); // 9号：协处理器段越界
 void invalid_TSS();       // 10号：无效的任务状态段
 void segment_not_present(); // 11号：段不存在
 void stack_segment();     // 12号：堆栈段错误
+void page_fault();      // 14号：页面错误（缺页或访问权限错误）
 void general_protection(); // 13号：一般保护性异常（最常遇到的权限问题）
 void reserved();          // 预留中断入口
 void irq13();             // 协处理器中断
 void alignment_check();   // 17号：对齐检查
 
 static void die(char* str, long esp_ptr, long nr) {/* 打印错误信息并进入死循环（内核恐慌的一种简易实现） */
+    int i = 0;    
     long* esp = (long*)esp_ptr;
 
-    printk("%s: %04x\n\r", str, 0xffff & nr); // 打印异常名称和错误码
+    printk("\n\r%s: %04x\n\r", str, nr & 0xffff);
+    printk("EIP:\t%04x:%p\n\rEFLAGS:\t%p\n\rESP:\t%04x:%p\n\r",
+            esp[1],esp[0],esp[2],esp[4],esp[3]);
+
+    printk("fs: %04x\n\r",_fs());
+    printk("base: %p, limit: %p\n\r",get_base(current->ldt[1]),get_limit(0x17));
+    if (esp[4] == 0x17) {
+        printk("Stack: ");
+        for (i=0;i<4;i++)
+            printk("%p ",get_seg_long(0x17,i+(long *)esp[3]));
+        printk("\n\r");
+    }
+
+    for(i=0;i<10;i++)
+        printk("%02x ",0xff & get_seg_byte(esp[1],(i+(char *)esp[0])));
+    printk("\n\r");
 
     while (1) { // 发生这种异常时，内核无法继续运行，直接挂起
     }
@@ -101,6 +137,10 @@ void do_stack_segment(long esp, long error_code) {
     die("stack segment", esp, error_code);
 }
 
+void do_page_fault(long esp, long error_code) {
+    die("page fault", esp, error_code);
+}
+
 void do_reserved(long esp, long error_code) {
     die("reserved (15,17-47) error",esp,error_code);
 }
@@ -111,7 +151,6 @@ void trap_init() {
     set_trap_gate(0, &divide_error);
     set_trap_gate(1,&debug);
     set_trap_gate(2,&nmi);
-                            /* 设置系统门 (Type 15, DPL 3): 允许用户程序触发，用于调试和异常处理 */
     set_system_gate(3,&int3);
     set_system_gate(4,&overflow);
     set_system_gate(5,&bounds);
@@ -121,6 +160,7 @@ void trap_init() {
     set_trap_gate(10, &invalid_TSS);
     set_trap_gate(11, &segment_not_present);
     set_trap_gate(12, &stack_segment);
+    set_trap_gate(14, &page_fault);
     set_trap_gate(13, &general_protection);
     set_trap_gate(15,&reserved);
     set_trap_gate(17,&alignment_check);

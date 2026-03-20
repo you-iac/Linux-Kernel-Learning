@@ -50,8 +50,6 @@ extern inline char * strstr(const char * cs,const char * ct);
 
 extern inline int strlen(const char * s);
 
-extern char * ___strtok;
-
 extern inline char * strtok(char * s,const char * ct);
 
 extern inline void * memcpy(void * dest,const void * src, int n);
