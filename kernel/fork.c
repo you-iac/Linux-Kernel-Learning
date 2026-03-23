@@ -2,6 +2,7 @@
 
 #include <asm/system.h>
 #include <linux/sched.h>
+#include <string.h>
 
 long last_pid = 0;
 // 复制当前进程的内存空间，设置新进程的LDT和页表
@@ -46,7 +47,7 @@ int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
     p->p_pptr = current;   // 设置父进程指针
 
     p->tss.back_link = 0;                         // TSS 链接域
-    p->tss.esp0 = PAGE_SIZE + (long)p - 8;        // 内核栈指针
+    p->tss.esp0 = PAGE_SIZE + (long)p;        // 内核栈指针
     p->tss.ss0 = 0x10;                            // 内核数据段选择子
     p->tss.cr3 = current->tss.cr3;                // 复制页目录（地址空间）
     p->tss.eip = eip;                             // 用户态指令指针

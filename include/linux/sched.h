@@ -73,6 +73,8 @@ struct tss_struct {
 /// 任务结构体，包含了任务的LDT、TSS以及其他相关信息
 struct task_struct {
     long state;
+    long counter;   
+    long priority;    
     long pid;
     struct task_struct      *p_pptr;
     struct desc_struct ldt[3];
@@ -82,6 +84,8 @@ struct task_struct {
 #define INIT_TASK \ 
 {                   \
     0,              \
+    15,             \
+    15,             \
     0,              \
     &init_task.task,\
     {               \

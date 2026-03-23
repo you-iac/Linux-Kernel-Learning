@@ -34,25 +34,86 @@ struct
 
 int clock = COUNTER;    // 全局变量，初始值为COUNTER，用于计数定时器中断的次数，决定了任务切换的频率
 
-void do_timer(long cpl) {// 定时器中断处理函数，更新系统时间和进行任务调度
-    if (clock >0 && clock <= COUNTER) {
-        clock--;
+void schedule() {   //实现进程调度
+    int i,next,c;                    // i:循环变量, next:下次要切换的任务号, c:最大 counter
+    struct task_struct ** p;         // 指向 task 数组的指针
+
+    while(1) {                       // 选择下一个要运行的任务
+        c = -1;                       // 当前最大 counter 初始化为 -1
+        next = 0;                     // 默认切换到 init(0)
+        i = NR_TASKS;                 // 从任务表末尾开始扫描
+        p = &task[NR_TASKS];
+
+        while (--i) {                 // 遍历所有任务槽
+            if (!*--p)                // 空槽跳过
+                continue;
+
+            if ((*p)->state == TASK_RUNNING && (*p)->counter > c)
+                c = (*p)->counter, next = i; // 选择可运行且 counter 最大的任务
+        }
+
+        if (c) break;                 // 找到合适任务则退出循环
+        for(p = &LAST_TASK ; p > &FIRST_TASK ; --p) { // 否则重算各任务的 counter
+            if (!(*p))                // 空槽跳过
+                continue;
+
+            (*p)->counter = ((*p)->counter >> 1) + (*p)->priority; // 衰减计数并加上优先级
+        }
     }
-    else if (clock == 0) {
-        schedule();
+    switch_to(next);                 // 执行任务切换到 next
+}
+// 内部函数，封装了可中断和不可中断的睡眠操作，参数 state 决定了睡眠的类型
+static inline void __sleep_on(struct task_struct** p, int state) {
+    struct task_struct* tmp;    //内核栈申请空间，并且作为下一个唤醒的地址，实现唤醒队列的静态链表设计
+
+    if (!p)
+        return;
+    if (current == &(init_task.task))
+        panic("task[0] trying to sleep");
+
+    tmp = *p;
+    *p = current;
+    current->state = state;
+
+repeat:
+    schedule();
+
+    if (*p && *p != current) {
+        (**p).state = 0;
+        current->state = TASK_UNINTERRUPTIBLE;
+        goto repeat;
     }
-    else {
-        clock = COUNTER;
+
+    if (!*p)
+        printk("Warning: *P = NULL\n\r");
+    *p = tmp;
+    if (*p)
+        tmp->state = 0;
+}
+// 可中断睡眠，允许被信号中断唤醒
+void interruptible_sleep_on(struct task_struct** p) {
+    __sleep_on(p, TASK_INTERRUPTIBLE);
+}
+// 不可中断睡眠，不能被信号中断唤醒
+void sleep_on(struct task_struct** p) {
+    __sleep_on(p, TASK_UNINTERRUPTIBLE);
+}
+// 唤醒一个睡眠的任务，参数 p 是指向任务指针的指针，唤醒后将任务状态设置为可运行
+void wake_up(struct task_struct **p) {
+    if (p && *p) {
+        if ((**p).state == TASK_STOPPED)
+            printk("wake_up: TASK_STOPPED");
+        if ((**p).state == TASK_ZOMBIE)
+            printk("wake_up: TASK_ZOMBIE");
+        (**p).state=0;
     }
 }
 
-void schedule() {   //实现简单的交替调度
-    if (current == task[0] && task[1]) {
-        switch_to(1);
-    }
-    else if (current == task[1]) {
-        switch_to(0);
-    }
+void do_timer(long cpl) {
+    if ((--current->counter)>0) return;
+    current->counter=0;
+    if (!cpl) return;
+    schedule();
 }
 
 void sched_init() {// 任务调度初始化函数，设置初始任务的TSS和LDT描述符，并将系统调用处理函数注册到IDT中
@@ -97,11 +158,11 @@ __asm__("movl $0x0, %edi\n\r"
         "jmp loopa");
 }
 
-void test_b(void) { 
-__asm__("movl $0x30, %edi\n\r"
+void test_b(void) {
+__asm__("movl $0x0, %edi\n\r"
         "movw $0x1b, %ax\n\t"
         "movw %ax, %gs \n\t"
-        "movb $0x0c, %ah\n\r"
+        "movb $0x0f, %ah\n\r"
         "movb $'B', %al\n\r"
         "loopb:\n\r"
         "movw %ax, %gs:(%edi)\n\r"

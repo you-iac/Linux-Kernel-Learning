@@ -44,9 +44,13 @@ void main(void) {
 
     move_to_user_mode();
     if (fork() == 0) {
-        test_b();
+        if (fork() == 0) {
+            test_b();
+        }
+        else {
+            test_a();
+        }
     }
-    else {
-        test_a();
-    }
+
+    while (1) {}
 }

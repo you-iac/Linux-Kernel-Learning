@@ -3,6 +3,9 @@
 unsigned long HIGH_MEMORY = 0;/* 记录物理内存的最高地址（字节），将在 mem_init 中初始化为 end_mem */
 
 unsigned char mem_map [ PAGING_PAGES ] = {0,};/* mem_map 是物理内存页框的使用状态数组 每个元素对应一个物理页*/
+
+#define copy_page(from,to) \
+__asm__("cld ; rep ; movsl"::"S" (from),"D" (to),"c" (1024):)
 // 释放一个物理页框，参数 addr 是页框的物理地址
 void free_page(unsigned long addr) {
     if (addr < LOW_MEM) return;
@@ -96,6 +99,34 @@ int copy_page_tables(unsigned long from,unsigned long to,long size) {
     invalidate();                                  // 刷新 TLB
     return 0;                                      // 成功
 }
+//
+void un_wp_page(unsigned long * table_entry) {
+    unsigned long old_page,new_page;
+    old_page = 0xfffff000 & *table_entry;
+    // 如果原页框地址在 LOW_MEM 以上，并且该页框的引用计数为 1，说明该页框没有被其他进程共享，可以直接修改页表项将其设为可写
+    if (old_page >= LOW_MEM && mem_map[MAP_NR(old_page)]==1) {
+        *table_entry |= 2;
+        invalidate();
+        return;
+    }
+    //否则，申请一页空间，复制原页内容到新页，修改页表项指向新页，并将新页设为可写
+    new_page=get_free_page();
+    if (old_page >= LOW_MEM)
+        mem_map[MAP_NR(old_page)]--;
+    copy_page(old_page,new_page);
+    *table_entry = new_page | 7;    //设置为可写
+    invalidate();
+}
+//写保护，实现写时复制机制@address 出错的线性地址
+void do_wp_page(unsigned long error_code, unsigned long address) {
+    if (address < TASK_SIZE)    // 用户空间地址，内核不允许访问
+        printk("\n\rBAD! KERNEL MEMORY WP-ERR!\n\r");
+    //计算出页表项的地址
+    un_wp_page((unsigned long *)
+            (((address>>10) & 0xffc) + (0xfffff000 &
+                *((unsigned long *) ((address>>20) &0xffc)))));
+}
+
 /// @brief 初始化物理内存页框管理 @param start_mem 主内存区域的起始物理地址s @param end_mem 物理内存的结束地址（最高地址）
 void mem_init(long start_mem, long end_mem) {
     int i;
